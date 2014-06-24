@@ -15,4 +15,4 @@ tail(Data)
 
 #### Means
 
-mean.sure_low_vs_sure_high= t.test(Data$d.sure_low,Data$d.sure_high,paired=T) 
+mean.sure_low_vs_sure_high= t.test(Data$d.sure_low,Data$d.sure_high,paired=T)
