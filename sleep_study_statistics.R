@@ -14,6 +14,9 @@ reward_group_subset=reshape(reward_group_subset,direction="long",varying=list(3:
 colnames(reward_group_subset)=c("code","group","reward","dprime","id")
 reward_group_subset$reward=as.factor(reward_group_subset$reward)
 
+sleep.group=subset(Data,Group=="sleep")
+wake.group=subset(Data,Group=="wake")
+
 ###check data
 nrow(Data)
 ncol(Data)
@@ -23,6 +26,9 @@ head(Data)
 options(contrasts=c("contr.sum","contr.poly"))
 #### Means
 
-mean.sure_low_vs_sure_high= t.test(Data$d.sure_low,Data$d.sure_high,paired=T)
+mean.sure_low_vs_sure_high= t.test(Data$d_sure_low,Data$d_sure_high,paired=T)
+Rcorr_all= t.test(Data$Rcorr_low,Data$Rcorr_high,paired=T)
+Rcorr_sleep= t.test(sleep.group$Rcorr_low,sleep.group$Rcorr_high,paired=T)
+Rcorr_wake= t.test(wake.group$Rcorr_low,wake.group$Rcorr_high,paired=T)
 
 pairwise_T=pairwise.t.test(reward_group_subset$dprime,reward_group_subset$reward,p.adjust.method="bonferroni",paired=TRUE)
