@@ -1,7 +1,7 @@
-Data=read.csv2("B_study_RT.csv")
+b.study=read.csv2("B_study_RT.csv")
 means=colMeans(Data[c(3:14)],na.rm=TRUE)
 
-plot(means,ylim=c(0,1400))
+plot(means,ylim=c(0,1400),xlab='conditions',pch=16) 
 
 
 
