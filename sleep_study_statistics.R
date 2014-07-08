@@ -1,8 +1,10 @@
 # Statistics for Reward, Sleep & Memory experiment
 
 ###set up working directory, read file
-wd <-"C:/Users/Renerts/Documents/Sleep_study/sleep_study_statistics.git"
+wd <- "C:/Users/Renerts/Documents/Sleep_study/sleep_study_statistics.git"
 setwd(wd)
+
+plot.dir <- "C:/Users/Renerts/Documents/Sleep_study/Paper/tables_graphs"
 
 a.study.all <- read.csv2("A_study_all.csv")
 b.study.RT <- read.csv2("B_study_RT.csv")
@@ -20,102 +22,206 @@ StErr <- function(x) {  # Takes array as input, gives st.error as output
   sqrt(var(x,na.rm=TRUE)/sum(!is.na(x)))
   }
 
-## Function ready, integrate into code!!!!!
-
-# table.plot <- function(x) {  #Takes array as input, returns data.frame ready for plotting
-#   
-#   means <- colMeans(x, na.rm=TRUE)
-#   names.x <- names(x)
-#   stErr <- apply(x, 2, StErr)
-#   stErr.UP <- means + stErr
-#   stErr.DN <- means - stErr
-#   sub.x <- data.frame(means,stErr, stErr.UP, stErr.DN)
-#   return(sub.x)
-# }
+table.plot <- function(x) {  #Takes array as input, returns data.frame ready for plotting
+  
+  StErr <- function(x) {  # Standart error
+    sqrt(var(x,na.rm=TRUE)/sum(!is.na(x)))
+  }
+  means <- colMeans(x, na.rm=TRUE)
+  stErr <- apply(x, 2, StErr)
+  stErr.UP <- means + stErr
+  stErr.DN <- means - stErr
+  sub.x <- data.frame(means,stErr, stErr.UP, stErr.DN)
+  return(sub.x)
+}
 
 ### Create subsets of data
 
 #### subsets for RTs
 
-names.RT.a <- names(a.study.all[c(26:35)])
-means.RT.a <- colMeans(a.study.all[c(26:35)], na.rm=TRUE)
-StErr.RT.a <- apply(a.study.all[c(26:35)], 2, StErr)
-StErr.RT.a.UP <- means.RT.a + StErr.RT.a
-StErr.RT.a.DN <- means.RT.a - StErr.RT.a
-sub.RT.a <- data.frame(means.RT.a, StErr.RT.a.UP, StErr.RT.a.DN)
+sub.RT.a <- table.plot(a.study.all[c(26:35)])  # Reaction times, a.study
+sub.RT.b.all <- table.plot(b.study.RT[c(5:16)])
+sub.RT.b.sleep <- table.plot(b.study.RT[b.study.RT$Group=='sleep',c(5:16)])
+sub.RT.b.wake <- table.plot(b.study.RT[b.study.RT$Group=='wake',c(5:16)])
 
 #### subsets for ACCs
 
-names.ACC.a <- names(a.study.all[c(36:49)])
-means.ACC.a <- colMeans(a.study.all[c(36:49)], na.rm=TRUE)
-StErr.ACC.a <- apply(a.study.all[c(36:49)], 2, StErr)
-StErr.ACC.a.UP <- means.ACC.a + StErr.ACC.a
-StErr.ACC.a.DN <- means.ACC.a - StErr.ACC.a
-sub.ACC.a <- data.frame(means.ACC.a, StErr.ACC.a.UP, StErr.ACC.a.DN)
+sub.ACC.sc <- table.plot(a.study.all[c(36:43)])  # Accuracy, a.study, single-correct answers
+sub.ACC.dc <- table.plot(a.study.all[c(44:49)])  # Accuracy, a.study, double-correct answers (&liv/nonliv)
 
+#### subsets for memory performance and statistical analysis
 
+sub.answers.piled=data.frame(R1=(a.study.all$r1.low+a.study.all$r1.high), R2=(a.study.all$r2.low+a.study.all$r2.high), F3=(a.study.all$f3.low+a.study.all$f3.high), F4=(a.study.all$f4.low+a.study.all$f4.high), Dist1=a.study.all$dist1, Dist2=a.study.all$dist2, Dist3=a.study.all$dist3, Dist4=a.study.all$dist4)
+
+inter.performance.across <- table.plot(a.study.all[c('rCorr.low','rCorr.high')])
+rownames(inter.performance.across)=c('all.low','all.high')
+inter.performance.sleep <- table.plot(a.study.all[a.study.all$Group=='sleep', c('rCorr.low','rCorr.high')])
+rownames(inter.performance.sleep)=c('sleep.low','sleep.high')
+inter.performance.wake <- table.plot(a.study.all[a.study.all$Group=='wake',c('rCorr.low','rCorr.high')])
+rownames(inter.performance.wake)=c('wake.low','wake.high')
+
+sub.performance.combined <- rbind(inter.performance.across,inter.performance.sleep,inter.performance.wake)
+
+sub.sleep.rcorr=a.study.all[a.study.all$Group=="sleep",c('Gender','rCorr.low','rCorr.high')]
+sub.wake.rcorr=a.study.all[a.study.all$Group=="wake",c('Gender','rCorr.low','rCorr.high')]
+
+#### reshaping data in long format
+
+sub.all.long=reshape(a.study.all[c('Group','Gender','rCorr.low','rCorr.high')],direction='long',varying=c('rCorr.low','rCorr.high'),timevar='reward',times=c('low','high'))
 
 ### Plot that shit
 
-
-x.RT <- 1:10*2-1
-plot(sub.RT.a$means.RT.a[c(1:10)]~x.RT,  # Reaction times
+png(filename=file.path(plot.dir,'rt_a_study.png'),width=850, height=500, pointsize = 16)
+x.RT <- 1:nrow(sub.RT.a)*2-1
+plot(sub.RT.a$means~x.RT,  # Reaction times
      cex=1.5, 
      xaxt='n', 
      yaxt='n',
      ylim=c(500,850), 
      xlab='Condition', 
      ylab='Reaction Time, ms', 
-     main='RTs across conditions', 
+     main='RTs across conditions, session I', 
      col=c(rep('black',4),rep('blue',4),rep('red',2)), 
      pch=16, 
      bty='l')
 axis(1, at=x.RT, labels=FALSE)
-text(x = x.RT, par("usr")[3]-5, labels = names.RT.a, srt = 15, pos = 1, xpd = TRUE)
+text(x = x.RT, par("usr")[3]-5, labels = rownames(sub.RT.a), srt = 15, pos = 1, xpd = TRUE)
 axis(2, at=seq(500, 850, by=50), labels = FALSE)
 text(y = seq(500, 850, by=50),labels = seq(500, 850, by=50), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
-arrows(x,StErr.RT.a.UP,x,StErr.RT.a.DN,code=3,length=0.2,angle=90,col=c(rep('black',4),rep('blue',4),rep('red',2)))
-legend("bottomright",paste(names.RT.a,": mean",round(sub.RT.a$means.RT.a, digits=2)),ncol=2,text.width=5)
+arrows(x.RT,sub.RT.a$stErr.UP,x.RT,sub.RT.a$stErr.DN,code=3,length=0.2,angle=90,col=c(rep('black',4),rep('blue',4),rep('red',2)))
+legend("bottomright",paste(rownames(sub.RT.a),": mean",round(sub.RT.a$means, digits=2)),ncol=2,text.width=5)
+dev.off()
 
-x.ACC.sc <- 1:8*2-1
-plot(sub.ACC.a$means.ACC.a[c(1:8)]~x.ACC,  # Accuracy, reward cue and single-correct word stim
+png(filename=file.path(plot.dir,'acc_cue_a_study.png'),width=850, height=500, pointsize = 16)
+x.ACC.sc <- 1:nrow(sub.ACC.sc)*2-1
+plot(sub.ACC.sc$means~x.ACC.sc,  # Accuracy, reward cue and single-correct word stim
                       cex=1.5, 
                       xaxt='n', 
                       yaxt='n',
                       ylim=c(0.7,1), 
                       xlab='Condition', 
                       ylab='Accuracy', 
-                      main='Response accuracy to reward cue stimulus', 
+                      main='Response accuracy to reward cue stimulus, session I', 
                       col=c(rep('black',4),rep('blue',4)), 
                       pch=16, 
                       bty='l')
-axis(1, at=x.ACC, labels=FALSE)
-text(x = x.ACC, par("usr")[3]-0.01, labels = names.ACC.a[c(1:8)], srt = 15, pos = 1, xpd = TRUE)
+axis(1, at=x.ACC.sc, labels=FALSE)
+text(x = x.ACC.sc, par("usr")[3]-0.01, labels = rownames(sub.ACC.sc), srt = 15, pos = 1, xpd = TRUE)
 axis(2, at=seq(0.7, 1, by=0.1), labels = FALSE)
 text(y = seq(0.7, 1, by=0.1),labels = seq(0.7, 1, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
-arrows(x,StErr.ACC.a.UP[c(1:8)],x,StErr.ACC.a.DN[c(1:8)],code=3,length=0.2,angle=90,col=c(rep('black',4),rep('blue',4)))
-legend("bottomright",paste(names.ACC.a[c(1:8)],": mean",round(sub.ACC.a$means.ACC.a[c(1:8)], digits=2)),ncol=2,text.width=4.2)
+arrows(x.ACC.sc, sub.ACC.sc$stErr.UP, x.ACC.sc,sub.ACC.sc$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('black',4), rep('blue',4)))
+legend("bottomright", paste(rownames(sub.ACC.sc), ": mean", round(sub.ACC.sc$means, digits=2)),ncol=2,text.width=4.2)
+dev.off()
 
-x.ACC.dc <- 1:6*2-1
-plot(sub.ACC.a$means.ACC.a[c(9:14)]~x.ACC.dc,  #Accuracy, double-correct word stim and living/non-living
-                      cex=1.5, 
-                      xaxt='n', 
-                      yaxt='n',
-                      ylim=c(0.7,1), 
-                      xlab='Condition', 
-                      ylab='Accuracy', 
-                      main='Response accuracy to word stimulus', 
-                      col=c(rep('black',4),rep('blue',2)), 
-                      pch=16, 
-                      bty='l')
-axis(1, at=x.ACC, labels=FALSE)
-text(x = x.ACC, par("usr")[3]-0.01, labels = names.ACC.a[c(9:14)], srt = 15, pos = 1, xpd = TRUE)
+png(filename=file.path(plot.dir,'acc_stim_a_study.png'),width=850, height=500, pointsize = 16)
+x.ACC.dc <- 1:nrow(sub.ACC.dc)*2-1
+plot(sub.ACC.dc$means~x.ACC.dc,  # Accuracy, word stimulus plus living/non-living stimuli
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(0.7,1), 
+     xlab='Condition', 
+     ylab='Accuracy', 
+     main='Response accuracy to word stimulus, session I', 
+     col=c(rep('black',4),rep('blue',4)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.ACC.dc, labels=FALSE)
+text(x = x.ACC.dc, par("usr")[3]-0.01, labels = rownames(sub.ACC.dc), srt = 15, pos = 1, xpd = TRUE)
 axis(2, at=seq(0.7, 1, by=0.1), labels = FALSE)
 text(y = seq(0.7, 1, by=0.1),labels = seq(0.7, 1, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
-arrows(x,StErr.ACC.a.UP[c(9:14)],x,StErr.ACC.a.DN[c(9:14)],code=3,length=0.2,angle=90,col=c(rep('black',4),rep('blue',2)))
-legend("bottomright",paste(names.ACC.a[c(9:14)],": mean",round(sub.ACC.a$means.ACC.a[c(9:14)], digits=2)),ncol=2,text.width=3)
+arrows(x.ACC.dc, sub.ACC.dc$stErr.UP, x.ACC.dc,sub.ACC.dc$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('black',4), rep('blue',4)))
+legend("bottomright", paste(rownames(sub.ACC.dc), ": mean", round(sub.ACC.dc$means, digits=2)),ncol=2,text.width=3)
+dev.off()
 
+png(filename=file.path(plot.dir,'distribution.png'),width=850, height=500, pointsize = 18)
+barplot(colSums(sub.answers.piled), main="Distribution of answers", xlab='Response', ylab='Answers summed', col=c('darkblue',rep('gray',6),'darkblue'))  # Plot to see where most of the answers land
+dev.off()
 
+png(filename=file.path(plot.dir,'RT.b.all.png'),width=850, height=600, pointsize = 16)
+x.RT.b.all <- 1:nrow(sub.RT.b.all)*2-1
+plot(sub.RT.b.all$means~x.RT.b.all,  
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(700,1400), 
+     xlab='Condition', 
+     ylab='Reaction time in ms', 
+     main='Reaction times across groups, session II', 
+     col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.RT.b.all, labels=FALSE)
+text(x = x.RT.b.all, par("usr")[3]-0.01, labels = rownames(sub.RT.b.all), srt = 15, pos = 1, xpd = TRUE)
+axis(2, at=seq(700, 1400, by=50), labels = FALSE)
+text(y = seq(700, 1400, by=50),labels = seq(700, 1400, by=50), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
+arrows(x.RT.b.all, sub.RT.b.all$stErr.UP, x.RT.b.all,sub.RT.b.all$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)))
+legend("bottomright", paste(rownames(sub.RT.b.all), ": mean", round(sub.RT.b.all$means, digits=2)),ncol=3,text.width=5)
+dev.off()
+
+png(filename=file.path(plot.dir,'RT.b.sleep.png'),width=850, height=600, pointsize = 16)
+x.RT.b.sleep <- 1:nrow(sub.RT.b.sleep)*2-1
+plot(sub.RT.b.sleep$means~x.RT.b.sleep,
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(700,1400), 
+     xlab='Condition', 
+     ylab='Reaction time in ms', 
+     main='Reaction times in sleep group, session II', 
+     col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.RT.b.sleep, labels=FALSE)
+text(x = x.RT.b.sleep, par("usr")[3]-0.01, labels = rownames(sub.RT.b.sleep), srt = 15, pos = 1, xpd = TRUE)
+axis(2, at=seq(700, 1400, by=50), labels = FALSE)
+text(y = seq(700, 1400, by=50),labels = seq(700, 1400, by=50), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
+arrows(x.RT.b.sleep, sub.RT.b.sleep$stErr.UP, x.RT.b.sleep,sub.RT.b.sleep$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)))
+legend("bottomright", paste(rownames(sub.RT.b.sleep), ": mean", round(sub.RT.b.sleep$means, digits=2)),ncol=3,text.width=5)
+dev.off()
+
+png(filename=file.path(plot.dir,'RT.b.wake.png'),width=850, height=600, pointsize = 16)
+x.RT.b.wake <- 1:nrow(sub.RT.b.wake)*2-1
+plot(sub.RT.b.wake$means~x.RT.b.wake,  
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(700,1400), 
+     xlab='Condition', 
+     ylab='Reaction time in ms', 
+     main='Reaction times in wake group, session II', 
+     col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.RT.b.wake, labels=FALSE)
+text(x = x.RT.b.wake, par("usr")[3]-0.01, labels = rownames(sub.RT.b.wake), srt = 15, pos = 1, xpd = TRUE)
+axis(2, at=seq(700, 1400, by=50), labels = FALSE)
+text(y = seq(700, 1400, by=50),labels = seq(700, 1400, by=50), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
+arrows(x.RT.b.wake, sub.RT.b.wake$stErr.UP, x.RT.b.wake,sub.RT.b.wake$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('black',4),rep('darkblue',4),rep('darkgray',4)))
+legend("bottomright", paste(rownames(sub.RT.b.wake), ": mean", round(sub.RT.b.wake$means, digits=2)),ncol=3,text.width=5)
+dev.off()
+
+# sub.performance.combined
+png(filename=file.path(plot.dir,'Rcorr_all.png'),width=850, height=600, pointsize = 16)
+x.performance.combined <- 1:nrow(sub.performance.combined)
+plot(sub.performance.combined$means~x.performance.combined,  # Memory performance as Rcorr values
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(0.2,0.5), 
+     xlab='Condition', 
+     ylab='Rcorr value', 
+     main='Memory performance', 
+     col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.performance.combined, labels=FALSE)
+text(x = x.performance.combined, par("usr")[3]-0.01, labels = rownames(sub.performance.combined), srt = 15, pos = 1, xpd = TRUE)
+axis(2, at=seq(0.2, 0.5, by=0.1), labels = FALSE)
+text(y = seq(0.2, 0.5, by=0.1),labels = seq(0.2, 0.5, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
+arrows(x.performance.combined, sub.performance.combined$stErr.UP, x.performance.combined,sub.performance.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)))
+legend("bottomright", paste(rownames(sub.performance.combined), ": mean", round(sub.performance.combined$means, digits=2), '±',round(sub.performance.combined$stErr, digits=3)),ncol=3,text.width=1.5)
+dev.off()
 
 # Data$Group=factor(Data$Group,labels=c("sleep","wake"),ordered=FALSE)
 # Data$Gender=factor(Data$Gender,labels=c("female","male"),ordered=FALSE)
@@ -125,8 +231,7 @@ legend("bottomright",paste(names.ACC.a[c(9:14)],": mean",round(sub.ACC.a$means.A
 # colnames(reward_group_subset)=c("code","group","reward","dprime","id")
 # reward_group_subset$reward=as.factor(reward_group_subset$reward)
 # 
-# sleep.group=subset(Data,Group=="sleep")
-# wake.group=subset(Data,Group=="wake")
+
 
 
 
@@ -150,5 +255,14 @@ pairwise_T=pairwise.t.test(reward_group_subset$dprime,reward_group_subset$reward
 # sd.rcorr_up=as.numeric(c(sd.mean_rcorr_low,sd.mean_rcorr_high))+mean_rcorr
 # sd.rcorr_dn=as.numeric(c(sd.mean_rcorr_low,sd.mean_rcorr_high))-mean_rcorr
 
-rcorr.low.sleep.wake=t.test(sleep.group$Rcorr_low,wake.group$Rcorr_low,paired=F)
-rcorr.high.sleep.wake=t.test(sleep.group$Rcorr_high,wake.group$Rcorr_high,paired=F)
+rcorr.low.across=t.test(sub.sleep.rcorr$rCorr.low,sub.wake.rcorr$rCorr.low,paired=F)
+rcorr.high.across=t.test(sub.sleep.rcorr$rCorr.high,sub.wake.rcorr$rCorr.high,paired=F)
+
+rcorr.sleep=t.test(sub.sleep.rcorr$rCorr.low,sub.sleep.rcorr$rCorr.high,paired=T)
+rcorr.wake=t.test(sub.wake.rcorr$rCorr.low,sub.wake.rcorr$rCorr.high,paired=T)
+
+rcorr.across=t.test(a.study.all$rCorr.low,a.study.all$rCorr.high,paired=T)
+r.corr.group=t.test(rCorr~reward,data=sub.all.long,paired=T)
+
+## not working, uneven groups, find answer!!!!!!!!
+r.corr.group=t.test(rCorr~Group,data=sub.all.long,paired=T)
