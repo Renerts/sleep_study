@@ -62,14 +62,21 @@ rownames(inter.performance.wake)=c('wake.low','wake.high')
 
 sub.performance.combined <- rbind(inter.performance.across,inter.performance.sleep,inter.performance.wake)
 
-sub.sleep.rcorr=a.study.all[a.study.all$Group=="sleep",c('Gender','rCorr.low','rCorr.high')]
-sub.wake.rcorr=a.study.all[a.study.all$Group=="wake",c('Gender','rCorr.low','rCorr.high')]
+sub.sleep.rcorr <- a.study.all[a.study.all$Group=="sleep",c('Gender','rCorr.low','rCorr.high')]
+sub.wake.rcorr <- a.study.all[a.study.all$Group=="wake",c('Gender','rCorr.low','rCorr.high')]
 
 #### reshaping data in long format
 
-sub.all.long=reshape(a.study.all[c('Group','Gender','rCorr.low','rCorr.high')],direction='long',varying=c('rCorr.low','rCorr.high'),timevar='reward',times=c('low','high'))
+sub.all.long <- reshape(a.study.all[c('Group','Gender','rCorr.low','rCorr.high')],direction='long',varying=c('rCorr.low','rCorr.high'),timevar='reward',times=c('low','high'))
+sub.all.long$reward <- as.factor(sub.all.long$reward)
+                                 
+sub.dprime.long <- reshape(a.study.all[c('Code','Group','Gender','d.low.all','d.high.all')],direction='long',varying=c('d.low.all','d.high.all'),v.names='d.prime', timevar='reward',times=c('low','high'))
+sub.dprime.long$reward <- as.factor(sub.dprime.long$reward)
+                                    
+sub.dprime.sure.long <- reshape(a.study.all[c('Code','Group','Gender','d.low.sure','d.high.sure')],direction='long',varying=c('d.low.sure','d.high.sure'),v.names='d.prime.sure', timevar='reward',times=c('low','high'))
+sub.dprime.sure.long$reward <- as.factor(sub.dprime.long$reward)
 
-### Plot that shit
+### Plot that sh**
 
 png(filename=file.path(plot.dir,'rt_a_study.png'),width=850, height=500, pointsize = 16)
 x.RT <- 1:nrow(sub.RT.a)*2-1
@@ -92,7 +99,7 @@ arrows(x.RT,sub.RT.a$stErr.UP,x.RT,sub.RT.a$stErr.DN,code=3,length=0.2,angle=90,
 legend("bottomright",paste(rownames(sub.RT.a),": mean",round(sub.RT.a$means, digits=2)),ncol=2,text.width=5)
 dev.off()
 
-png(filename=file.path(plot.dir,'acc_cue_a_study.png'),width=850, height=500, pointsize = 16)
+png(filename=file.path(plot.dir,'acc_sc_a_study.png'),width=850, height=500, pointsize = 16)
 x.ACC.sc <- 1:nrow(sub.ACC.sc)*2-1
 plot(sub.ACC.sc$means~x.ACC.sc,  # Accuracy, reward cue and single-correct word stim
                       cex=1.5, 
@@ -101,7 +108,7 @@ plot(sub.ACC.sc$means~x.ACC.sc,  # Accuracy, reward cue and single-correct word 
                       ylim=c(0.7,1), 
                       xlab='Condition', 
                       ylab='Accuracy', 
-                      main='Response accuracy to reward cue stimulus, session I', 
+                      main='Response accuracy to reward cue \nand word stimuli, session I', 
                       col=c(rep('black',4),rep('blue',4)), 
                       pch=16, 
                       bty='l')
@@ -113,7 +120,7 @@ arrows(x.ACC.sc, sub.ACC.sc$stErr.UP, x.ACC.sc,sub.ACC.sc$stErr.DN, code=3, leng
 legend("bottomright", paste(rownames(sub.ACC.sc), ": mean", round(sub.ACC.sc$means, digits=2)),ncol=2,text.width=4.2)
 dev.off()
 
-png(filename=file.path(plot.dir,'acc_stim_a_study.png'),width=850, height=500, pointsize = 16)
+png(filename=file.path(plot.dir,'acc_dc_a_study.png'),width=850, height=500, pointsize = 16)
 x.ACC.dc <- 1:nrow(sub.ACC.dc)*2-1
 plot(sub.ACC.dc$means~x.ACC.dc,  # Accuracy, word stimulus plus living/non-living stimuli
      cex=1.5, 
@@ -122,7 +129,7 @@ plot(sub.ACC.dc$means~x.ACC.dc,  # Accuracy, word stimulus plus living/non-livin
      ylim=c(0.7,1), 
      xlab='Condition', 
      ylab='Accuracy', 
-     main='Response accuracy to word stimulus, session I', 
+     main='Response accuracy for reward & word stimuli \nand living vs nonliving stimuli, session I', 
      col=c(rep('black',4),rep('blue',4)), 
      pch=16, 
      bty='l')
@@ -211,7 +218,7 @@ plot(sub.performance.combined$means~x.performance.combined,  # Memory performanc
      ylim=c(0.2,0.5), 
      xlab='Condition', 
      ylab='Rcorr value', 
-     main='Memory performance', 
+     main='Memory performance for "sure" responses', 
      col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)), 
      pch=16, 
      bty='l')
@@ -255,14 +262,19 @@ pairwise_T=pairwise.t.test(reward_group_subset$dprime,reward_group_subset$reward
 # sd.rcorr_up=as.numeric(c(sd.mean_rcorr_low,sd.mean_rcorr_high))+mean_rcorr
 # sd.rcorr_dn=as.numeric(c(sd.mean_rcorr_low,sd.mean_rcorr_high))-mean_rcorr
 
-rcorr.low.across=t.test(sub.sleep.rcorr$rCorr.low,sub.wake.rcorr$rCorr.low,paired=F)
-rcorr.high.across=t.test(sub.sleep.rcorr$rCorr.high,sub.wake.rcorr$rCorr.high,paired=F)
+rcorr.low.across <- t.test(sub.sleep.rcorr$rCorr.low,sub.wake.rcorr$rCorr.low,paired=F)
+rcorr.high.across <- t.test(sub.sleep.rcorr$rCorr.high,sub.wake.rcorr$rCorr.high,paired=F)
 
-rcorr.sleep=t.test(sub.sleep.rcorr$rCorr.low,sub.sleep.rcorr$rCorr.high,paired=T)
-rcorr.wake=t.test(sub.wake.rcorr$rCorr.low,sub.wake.rcorr$rCorr.high,paired=T)
+rcorr.sleep <- t.test(sub.sleep.rcorr$rCorr.low,sub.sleep.rcorr$rCorr.high,paired=T)
+rcorr.wake <- t.test(sub.wake.rcorr$rCorr.low,sub.wake.rcorr$rCorr.high,paired=T)
 
-rcorr.across=t.test(a.study.all$rCorr.low,a.study.all$rCorr.high,paired=T)
-r.corr.group=t.test(rCorr~reward,data=sub.all.long,paired=T)
+rcorr.across <- t.test(a.study.all$rCorr.low,a.study.all$rCorr.high,paired=T)
+r.corr.group <- t.test(rCorr ~ reward,data=sub.all.long,paired=T)
 
-## not working, uneven groups, find answer!!!!!!!!
-r.corr.group=t.test(rCorr~Group,data=sub.all.long,paired=T)
+r.corr.group <- t.test(rCorr ~ Group,data=sub.all.long,paired=F, var.equal=T)
+
+### ezANOVA
+
+ez.rCorr <- ezANOVA(data=sub.all.long,dv=rCorr, wid=id, within=reward, between=Group, type=2)
+ez.dprime <- ezANOVA(data=sub.dprime.long,dv=d.prime, wid=Code, within=reward, between=Group, type=2)
+ez.dprime.sure <- ezANOVA(data=sub.dprime.sure.long,dv=d.prime.sure, wid=Code, within=reward, between=Group, type=2)
