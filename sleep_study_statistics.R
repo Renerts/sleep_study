@@ -65,6 +65,17 @@ sub.performance.combined <- rbind(inter.performance.across,inter.performance.sle
 sub.sleep.rcorr <- a.study.all[a.study.all$Group=="sleep",c('Gender','rCorr.low','rCorr.high')]
 sub.wake.rcorr <- a.study.all[a.study.all$Group=="wake",c('Gender','rCorr.low','rCorr.high')]
 
+##### for dprime plotting
+
+inter.dsure.across <- table.plot(a.study.all[c('d.low.sure','d.high.sure')])
+rownames(inter.dsure.across)=c('all.low','all.high')
+inter.dsure.sleep <- table.plot(a.study.all[a.study.all$Group=='sleep', c('d.low.sure','d.high.sure')])
+rownames(inter.dsure.sleep)=c('sleep.low','sleep.high')
+inter.dsure.wake <- table.plot(a.study.all[a.study.all$Group=='wake',c('d.low.sure','d.high.sure')])
+rownames(inter.dsure.wake)=c('wake.low','wake.high')
+
+sub.dsure.combined <- rbind(inter.dsure.across,inter.dsure.sleep,inter.dsure.wake)
+
 #### reshaping data in long format
 
 sub.all.long <- reshape(a.study.all[c('Group','Gender','rCorr.low','rCorr.high')],direction='long',varying=c('rCorr.low','rCorr.high'),timevar='reward',times=c('low','high'))
@@ -209,7 +220,7 @@ legend("bottomright", paste(rownames(sub.RT.b.wake), ": mean", round(sub.RT.b.wa
 dev.off()
 
 # sub.performance.combined
-png(filename=file.path(plot.dir,'Rcorr_all.png'),width=850, height=600, pointsize = 16)
+png(filename=file.path(plot.dir,'Rcorr_all.png'),width=850, height=450, pointsize = 16)
 x.performance.combined <- 1:nrow(sub.performance.combined)
 plot(sub.performance.combined$means~x.performance.combined,  # Memory performance as Rcorr values
      cex=1.5, 
@@ -223,11 +234,33 @@ plot(sub.performance.combined$means~x.performance.combined,  # Memory performanc
      pch=16, 
      bty='l')
 axis(1, at=x.performance.combined, labels=FALSE)
-text(x = x.performance.combined, par("usr")[3]-0.01, labels = rownames(sub.performance.combined), srt = 15, pos = 1, xpd = TRUE)
+text(x = x.performance.combined, par("usr")[3]-0.01, labels = rownames(sub.performance.combined), srt = 0, pos = 1, xpd = TRUE)
 axis(2, at=seq(0.2, 0.5, by=0.1), labels = FALSE)
 text(y = seq(0.2, 0.5, by=0.1),labels = seq(0.2, 0.5, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
 arrows(x.performance.combined, sub.performance.combined$stErr.UP, x.performance.combined,sub.performance.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)))
 legend("bottomright", paste(rownames(sub.performance.combined), ": mean", round(sub.performance.combined$means, digits=2), '±',round(sub.performance.combined$stErr, digits=3)),ncol=3,text.width=1.5)
+dev.off()
+
+# sub.dsure.combined
+png(filename=file.path(plot.dir,'Dprime_sure.png'),width=850, height=450, pointsize = 16)
+x.dsure.combined <- 1:nrow(sub.dsure.combined)
+plot(sub.dsure.combined$means~x.dsure.combined,  # Memory performance as Dprime values
+     cex=1.5, 
+     xaxt='n', 
+     yaxt='n',
+     ylim=c(0.4,1), 
+     xlab='Condition', 
+     ylab='D-prime value', 
+     main='Memory performance for "sure" responses', 
+     col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)), 
+     pch=16, 
+     bty='l')
+axis(1, at=x.dsure.combined, labels=FALSE)
+text(x = x.dsure.combined, par("usr")[3]-0.01, labels = rownames(sub.dsure.combined), srt = 0, pos = 1, xpd = TRUE)
+axis(2, at=seq(0.4, 1, by=0.1), labels = FALSE)
+text(y = seq(0.4, 1, by=0.1),labels = seq(0.4, 1, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
+arrows(x.dsure.combined, sub.dsure.combined$stErr.UP, x.dsure.combined,sub.dsure.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)))
+legend("bottomright", paste(rownames(sub.dsure.combined), ": mean", round(sub.dsure.combined$means, digits=2), '±',round(sub.dsure.combined$stErr, digits=3)),ncol=3,text.width=1.5)
 dev.off()
 
 # Data$Group=factor(Data$Group,labels=c("sleep","wake"),ordered=FALSE)
@@ -278,3 +311,9 @@ r.corr.group <- t.test(rCorr ~ Group,data=sub.all.long,paired=F, var.equal=T)
 ez.rCorr <- ezANOVA(data=sub.all.long,dv=rCorr, wid=id, within=reward, between=Group, type=2)
 ez.dprime <- ezANOVA(data=sub.dprime.long,dv=d.prime, wid=Code, within=reward, between=Group, type=2)
 ez.dprime.sure <- ezANOVA(data=sub.dprime.sure.long,dv=d.prime.sure, wid=Code, within=reward, between=Group, type=2)
+
+aov.goup.reward.dprime <- aov(d.prime.sure ~ Group*reward + Error(id/reward), data=sub.dprime.sure.long)
+summary(aov.goup.reward.dprime)
+
+aov.reward.dprime <- aov(d.prime.sure ~ reward + Error(id), data=sub.dprime.sure.long)
+summary(aov.reward.dprime)
