@@ -80,12 +80,15 @@ sub.dsure.combined <- rbind(inter.dsure.across,inter.dsure.sleep,inter.dsure.wak
 
 sub.all.long <- reshape(a.study.all[c('Group','Gender','rCorr.low','rCorr.high')],direction='long',varying=c('rCorr.low','rCorr.high'),timevar='reward',times=c('low','high'))
 sub.all.long$reward <- as.factor(sub.all.long$reward)
+sub.all.long$id <- as.factor(sub.all.long$id)
                                  
 sub.dprime.long <- reshape(a.study.all[c('Code','Group','Gender','d.low.all','d.high.all')],direction='long',varying=c('d.low.all','d.high.all'),v.names='d.prime', timevar='reward',times=c('low','high'))
 sub.dprime.long$reward <- as.factor(sub.dprime.long$reward)
+sub.dprime.long$id <- as.factor(sub.dprime.long$id)
                                     
 sub.dprime.sure.long <- reshape(a.study.all[c('Code','Group','Gender','d.low.sure','d.high.sure')],direction='long',varying=c('d.low.sure','d.high.sure'),v.names='d.prime.sure', timevar='reward',times=c('low','high'))
 sub.dprime.sure.long$reward <- as.factor(sub.dprime.long$reward)
+sub.dprime.sure.long$id <- as.factor(sub.dprime.long$id)
 
 ### Plot that sh**
 
@@ -238,10 +241,10 @@ text(x = x.performance.combined, par("usr")[3]-0.01, labels = rownames(sub.perfo
 axis(2, at=seq(0.2, 0.5, by=0.1), labels = FALSE)
 text(y = seq(0.2, 0.5, by=0.1),labels = seq(0.2, 0.5, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
 arrows(x.performance.combined, sub.performance.combined$stErr.UP, x.performance.combined,sub.performance.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)))
-legend("bottomright", paste(rownames(sub.performance.combined), ": mean", round(sub.performance.combined$means, digits=2), '±',round(sub.performance.combined$stErr, digits=3)),ncol=3,text.width=1.5)
+legend("bottomright", paste(rownames(sub.performance.combined), ": mean", round(sub.performance.combined$means, digits=2), 'Â±',round(sub.performance.combined$stErr, digits=3)),ncol=3,text.width=1.5)
 dev.off()
 
-# sub.dsure.combined
+# sub.dsure.combined scatter
 png(filename=file.path(plot.dir,'Dprime_sure.png'),width=850, height=450, pointsize = 16)
 x.dsure.combined <- 1:nrow(sub.dsure.combined)
 plot(sub.dsure.combined$means~x.dsure.combined,  # Memory performance as Dprime values
@@ -260,7 +263,34 @@ text(x = x.dsure.combined, par("usr")[3]-0.01, labels = rownames(sub.dsure.combi
 axis(2, at=seq(0.4, 1, by=0.1), labels = FALSE)
 text(y = seq(0.4, 1, by=0.1),labels = seq(0.4, 1, by=0.1), par("usr")[1]-0.1, srt = 0, pos = 2, xpd = TRUE)
 arrows(x.dsure.combined, sub.dsure.combined$stErr.UP, x.dsure.combined,sub.dsure.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('darkgray',2), rep('darkblue',2), rep('black',2)))
-legend("bottomright", paste(rownames(sub.dsure.combined), ": mean", round(sub.dsure.combined$means, digits=2), '±',round(sub.dsure.combined$stErr, digits=3)),ncol=3,text.width=1.5)
+legend("bottomright", paste(rownames(sub.dsure.combined), ": mean", round(sub.dsure.combined$means, digits=2), 'Â±',round(sub.dsure.combined$stErr, digits=3)),ncol=3,text.width=1.5)
+dev.off()
+
+# sub.dsure.combined barplot
+png(filename=file.path(plot.dir,'Dprime_sure_bar.png'),width=850, height=450, pointsize = 16)
+sub.barplot.dsure <- sub.dsure.combined
+dsure.combined <- barplot(sub.dsure.combined[, 'means'],  # Memory performance as Dprime values
+#      cex=1.5, 
+#      xaxt='n', 
+#      yaxt='n',
+        axes=FALSE,
+        width=rep(0.8, 6),
+     ylim=c(0,1.2),
+        xlim=c(0,6),
+        space=rep(c(0.2, 0),3),
+     xlab='Condition', 
+     ylab='D-prime value', 
+     main='Memory performance for "sure" responses', 
+     col=c(rep('lightgray',2), rep('lightblue',2)), 
+     pch=16,
+        names.arg=rownames(sub.dsure.combined)
+)
+axis(2, at=seq(0, 1.2, by=0.2), labels = FALSE)
+text(y = seq(0, 1.2, by=0.2),labels = seq(0, 1.2, by=0.2), par("usr")[1], srt = 0, pos = 2, xpd = TRUE)
+arrows(dsure.combined, sub.dsure.combined$stErr.UP, dsure.combined,sub.dsure.combined$stErr.DN, code=3, length=0.2, angle=90,col=c(rep('red',4)))
+text(dsure.combined, 0, paste(round(sub.dsure.combined$means, 2), 'Â±', round(sub.dsure.combined$stErr, 2)),cex=1,pos=3) 
+text(paste('p=', round(dprime.sure.wake[['p.value']],3)), x=mean(dsure.combined[c(5,6), ]), y=max(sub.dsure.combined$stErr.UP+0.15 )) 
+lines(x=dsure.combined[c(5,6), ], y=rep(max(sub.dsure.combined$stErr.UP+0.1),2))
 dev.off()
 
 # Data$Group=factor(Data$Group,labels=c("sleep","wake"),ordered=FALSE)
@@ -306,14 +336,28 @@ r.corr.group <- t.test(rCorr ~ reward,data=sub.all.long,paired=T)
 
 r.corr.group <- t.test(rCorr ~ Group,data=sub.all.long,paired=F, var.equal=T)
 
+dprime.sure.wake <- t.test(d.prime.sure ~ reward, data=sub.dprime.sure.long[sub.dprime.sure.long$Group=='wake', ], paired=T)
+dprime.sure.wake
+
 ### ezANOVA
+library(ez)
 
 ez.rCorr <- ezANOVA(data=sub.all.long,dv=rCorr, wid=id, within=reward, between=Group, type=2)
-ez.dprime <- ezANOVA(data=sub.dprime.long,dv=d.prime, wid=Code, within=reward, between=Group, type=2)
-ez.dprime.sure <- ezANOVA(data=sub.dprime.sure.long,dv=d.prime.sure, wid=Code, within=reward, between=Group, type=2)
+stargazer(ez.rCorr, type='text', summary=F)
 
+ez.dprime <- ezANOVA(data=sub.dprime.long,dv=d.prime, wid=Code, within=reward, between=Group, type=2)
+stargazer(ez.dprime, type='text', summary=F)
+
+ez.dprime.sure <- ezANOVA(data=sub.dprime.sure.long,dv=d.prime.sure, wid=Code, within=reward, between=Group, type=2)
+ez.dprime.sure
+stargazer(ez.dprime.sure, type='text', summary=F)
+capture.output(stargazer(ez.dprime.sure, type='text', summary=F), file=file.path(plot.dir,"dprime.sure.doc"))
+
+### ANOVA
 aov.goup.reward.dprime <- aov(d.prime.sure ~ Group*reward + Error(id/reward), data=sub.dprime.sure.long)
 summary(aov.goup.reward.dprime)
+capture.output(summary(aov.goup.reward.dprime), file=file.path(plot.dir,"aov.dprime.sure.doc"))
 
 aov.reward.dprime <- aov(d.prime.sure ~ reward + Error(id), data=sub.dprime.sure.long)
 summary(aov.reward.dprime)
+
